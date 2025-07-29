@@ -25,16 +25,20 @@ You can fetch these with the developer tools, burp, or a browser extension, what
 The cookies will get passed to the new `-c` argument, and you no longer need to pass an email or password.
 ```bash
 # Get the help menu displayed
-htb-academy-to-md -h
+> htb-academy-to-md -h
 
-# Feed the URL to the module.
-htb-academy-to-md -m https://academy.hackthebox.com/module/112/section/1060 -c "htb_academy_session=value; XSRF-TOKEN=value; some-other-cookie=value"
-
-# Save images in module locally.
-htb-academy-to-md -m https://academy.hackthebox.com/module/112/section/1060 -local_images -c "htb_academy_session=value; XSRF-TOKEN=value; some-other-cookie=value"
-
-# You can also grab multiple modules using a simple loop if preferred. (bash example)
-for i in $(cat modules.txt);do htb-academy-to-md -m $i -c "htb_academy_session=value; XSRF-TOKEN=value; some-other-cookie=value";done
+# Run with a file containing multiple modules, write markdown to /tmp/module and images to /tmp/module/images
+> htb-academy-to-md -m /tmp/modulelist.txt -o /tmp/module/ -i /tmp/module/images/ -c "htb_academy_session="
+Authenticating with HackTheBox...
+Downloading module https://academy.hackthebox.com/module/136/section/1259
+Downloading module images...
+Finished downloading module!
+Downloading module https://academy.hackthebox.com/module/116/section/1140
+Downloading module images...
+Finished downloading module!
+Downloading module https://academy.hackthebox.com/module/115/section/1101
+Downloading module images...
+Finished downloading module!
 ```
 
 ### Building
