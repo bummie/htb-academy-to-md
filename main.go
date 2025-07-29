@@ -5,7 +5,9 @@ import (
 	"htb-academy-md/parser"
 	"htb-academy-md/utils"
 	"htb-academy-md/webrequest"
+	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
@@ -22,12 +24,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Downloading requested module...")
-	title, content, err := parser.GetModule(options.ModuleUrl, session)
+	for _, moduleUrl := range options.Modules {
+		fetchModule(moduleUrl, options, session)
+	}
+}
 
-	if options.LocalImages {
+func fetchModule(moduleUrl string, options utils.Args, session *http.Client) {
+
+	fmt.Printf("Downloading module %s\n", moduleUrl)
+
+	title, content, err := parser.GetModule(moduleUrl, session)
+
+	if options.ImageDirectory != "" {
 		fmt.Println("Downloading module images...")
-		content, err = parser.GetImagesLocally(content)
+		content, err = parser.GetImagesLocally(content, options.ImageDirectory)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed downloading images locally %s", err.Error())
@@ -41,7 +51,8 @@ func main() {
 		os.Exit(2)
 	}
 
-	err = os.WriteFile(title+".md", []byte(markdownContent), 0666)
+	outputDirectory := filepath.Join(options.OutputDirectory, title+".md")
+	err = os.WriteFile(outputDirectory, []byte(markdownContent), 0666)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed writing markdown content to file %s", err.Error())
 		os.Exit(3)

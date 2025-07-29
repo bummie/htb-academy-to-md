@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -234,7 +235,7 @@ func startsWith(str, prefix string) bool {
 	return len(str) >= len(prefix) && str[0:len(prefix)] == prefix
 }
 
-func GetImagesLocally(htmlPages []string) ([]string, error) {
+func GetImagesLocally(htmlPages []string, writePath string) ([]string, error) {
 	var result []string
 	for _, page := range htmlPages {
 		doc, err := html.Parse(strings.NewReader(page))
@@ -242,7 +243,7 @@ func GetImagesLocally(htmlPages []string) ([]string, error) {
 			return []string{}, err
 		}
 
-		replaceImgs(doc)
+		replaceImgs(doc, writePath)
 		var htmlBulder strings.Builder
 		if err := html.Render(&htmlBulder, doc); err != nil {
 			return []string{}, err
@@ -254,11 +255,11 @@ func GetImagesLocally(htmlPages []string) ([]string, error) {
 	return result, nil
 }
 
-func replaceImgs(node *html.Node) {
+func replaceImgs(node *html.Node, writePath string) {
 	if node.Type == html.ElementNode && node.Data == "img" {
 		for i, attr := range node.Attr {
 			if attr.Key == "src" {
-				fileName, err := downloadImage(node.Attr[i].Val)
+				fileName, err := downloadImage(node.Attr[i].Val, writePath)
 				if err != nil {
 					// Replace url, but send out message that the image was not correctly downloaded
 					fmt.Fprintln(os.Stderr, "could not download image "+node.Attr[i].Val)
@@ -269,11 +270,11 @@ func replaceImgs(node *html.Node) {
 	}
 
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		replaceImgs(child)
+		replaceImgs(child, writePath)
 	}
 }
 
-func downloadImage(fileUrl string) (string, error) {
+func downloadImage(fileUrl string, writePath string) (string, error) {
 	fileName := randomFileName()
 	resp, err := http.Get(fileUrl)
 	if err != nil {
@@ -285,23 +286,27 @@ func downloadImage(fileUrl string) (string, error) {
 	}
 	if isPNG(content) {
 		fileName = fileName + ".png"
+		fileName = filepath.Join(writePath, fileName)
 		err := os.WriteFile(fileName, content, 0666)
 		if err != nil {
 			return "", err
 		}
 	} else if isJPEG(content) {
 		fileName = fileName + ".jpg"
+		fileName = filepath.Join(writePath, fileName)
 		err := os.WriteFile(fileName, content, 0666)
 		if err != nil {
 			return "", err
 		}
 	} else if isGIF(content) {
 		fileName = fileName + ".gif"
+		fileName = filepath.Join(writePath, fileName)
 		err := os.WriteFile(fileName, content, 0666)
 		if err != nil {
 			return "", err
 		}
 	} else {
+		fileName = filepath.Join(writePath, fileName)
 		err := os.WriteFile(fileName, content, 0666)
 		if err != nil {
 			return "", err
